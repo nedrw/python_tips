@@ -1,2 +1,6 @@
 # python_tips
-some tips of python
+some tips for python, like fstring, magic func, metaclass, descriptor...
+
+```shell
+python main.py
+```
