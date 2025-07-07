@@ -87,3 +87,7 @@ def main():
     example_groupby()
     example_islice()
     example_tee()
+
+
+if __name__ == "__main__":
+    main()

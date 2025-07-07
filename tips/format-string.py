@@ -98,6 +98,7 @@ def struct_fstring():
 
     :returns: None
     """
+
     class Word:
         def __init__(self, x, y):
             self.x = x
@@ -142,3 +143,7 @@ def main():
     datetime_fstring()
     align_fstring()
     struct_fstring()
+
+
+if __name__ == "__main__":
+    main()

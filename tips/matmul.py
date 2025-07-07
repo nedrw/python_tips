@@ -17,10 +17,7 @@ class Matrix:
 
     def __rmatmul__(self, other):
         # 如果左侧对象不支持 @ 操作，则尝试调用 __rmatmul__
-        result_data = [
-            [a * other for a in row_a]
-            for row_a in self.data
-        ]
+        result_data = [[a * other for a in row_a] for row_a in self.data]
         return Matrix(result_data)
 
     def __imatmul__(self, other):
@@ -48,3 +45,7 @@ def main():
     # 原地矩阵乘法
     m1 @= m2
     print(m1)  # 输出: Matrix([[19, 22], [43, 50]])
+
+
+if __name__ == "__main__":
+    main()
