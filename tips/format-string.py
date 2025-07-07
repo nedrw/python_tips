@@ -117,7 +117,8 @@ def struct_fstring():
     print(f"{Word(1, 2)=:2}")
 
 
-def examples():
+@finfo
+def main():
     """
     A collection of functions demonstrating various uses of f-strings in Python.
 

@@ -25,7 +25,7 @@ def run_all_examples():
         mod = importlib.import_module(module)
         # 查找模块中定义的示例函数（非导入函数）
         for name, func in inspect.getmembers(mod, inspect.isfunction):
-            if name == "examples" and func.__module__ == module:
+            if name == "main" and func.__module__ == module:
                 func()  # 执行示例函数
     print("\n===== 所有示例执行完成 =====")
 
@@ -35,7 +35,7 @@ def run_single_example(example_name):
     try:
         module = importlib.import_module(f"tips.{example_name}")
         for name, func in inspect.getmembers(module, inspect.isfunction):
-            if name.endswith("_examples"):
+            if name == "main":
                 print(f"\n===== 运行 {example_name} 示例 =====")
                 func()
                 return
