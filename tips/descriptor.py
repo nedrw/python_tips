@@ -33,6 +33,8 @@ class Person:
         self.age = age
 
 
+# 描述符机制用于控制属性访问行为。一个类如果定义了 __get__、__set__ 或 __delete__ 中的至少一个方法，就被认为是一个描述符。
+# 描述符通常用于实现属性（property）的自定义行为，比如 getter、setter 或 deleter。
 @finfo
 def main():
     p = Person("Alice", 30)
