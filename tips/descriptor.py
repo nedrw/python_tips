@@ -31,6 +31,7 @@ class Person:
     def __init__(self, name, age):
         self.name = name
         self.age = age
+        self.other = TypedProperty(name, str) # 对实例属性无效
 
 
 # 描述符机制用于控制属性访问行为。一个类如果定义了 __get__、__set__ 或 __delete__ 中的至少一个方法，就被认为是一个描述符。
@@ -40,6 +41,8 @@ def main():
     p = Person("Alice", 30)
     print(p.name)  # 输出: Alice
     print(p.age)  # 输出: 30
+    p.other = "other"
+    print(p.other, type(p.other))
 
     p.age = 31
     del p.name
