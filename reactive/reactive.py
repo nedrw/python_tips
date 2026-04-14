@@ -2,6 +2,18 @@ from abc import ABC, abstractmethod
 from typing import Protocol
 
 
+class ControllerProtocol(Protocol):
+    """控件标准接口：所有使用响应式数据的控件必须实现此接口"""
+
+    def update(self, reactive_data: "Reactivable") -> None:
+        """更新控件，接收响应式数据
+
+        Args:
+            reactive_data: 响应式数据对象
+        """
+        ...
+
+
 class ChangeHistory(Protocol):
     def notify(self) -> None: ...
 
@@ -251,6 +263,7 @@ class Reactivable:
         "_execute_command",
         "notify",
         "subscribe",
+        "bind_controller",
         "undo",
         "redo",
         "switch",
@@ -354,8 +367,12 @@ class Reactivable:
 
         # 如果绑定了控件，直接通知控件
         if self._controller is not None:
-            if hasattr(self._controller, "update"):
-                self._controller.update(self)
+            # 验证控件接口（运行时检查）
+            if not hasattr(self._controller, "update"):
+                raise TypeError(
+                    f"控件 {type(self._controller).__name__} 必须实现 update(reactive_data) 方法"
+                )
+            self._controller.update(self)
         else:
             # 没有绑定控件，通知父对象（变更冒泡）
             if self._parent is not None:
@@ -363,6 +380,21 @@ class Reactivable:
 
     def subscribe(self, callback):
         self._observers.add(callback)
+
+    def bind_controller(self, controller: ControllerProtocol) -> None:
+        """绑定控件，并验证接口
+
+        Args:
+            controller: 控件对象，必须实现 ControllerProtocol 接口
+
+        Raises:
+            TypeError: 如果控件没有实现 update 方法
+        """
+        if not hasattr(controller, "update"):
+            raise TypeError(
+                f"控件 {type(controller).__name__} 必须实现 update(reactive_data) 方法"
+            )
+        self._controller = controller
 
     def switch(self, value: bool):
         """开启或关闭批量更新模式"""

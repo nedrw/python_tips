@@ -425,5 +425,79 @@ class TestCommandManager(unittest.TestCase):
         self.assertEqual(len(manager.undo_stack), 1)
 
 
+class TestControllerProtocol(unittest.TestCase):
+    """测试控件协议和绑定机制"""
+
+    def test_controller_with_update_method(self):
+        """验证实现了 update 方法的控件可以正常绑定和通知"""
+        from reactive.reactive import Reactivable
+
+        # 创建一个模拟的控件类
+        class MockController:
+            def __init__(self):
+                self.updated = False
+                self.reactive_data = None
+
+            def update(self, reactive_data):
+                self.updated = True
+                self.reactive_data = reactive_data
+
+        # 创建响应式数据和控件
+        data = {"name": "Alice"}
+        reactivable = Reactivable(data)
+        controller = MockController()
+
+        # 绑定控件
+        reactivable.bind_controller(controller)
+        self.assertEqual(reactivable._controller, controller)
+
+        # 修改数据，应该触发控件的 update 方法
+        reactivable.name = "Bob"
+        self.assertTrue(controller.updated)
+        self.assertEqual(controller.reactive_data, reactivable)
+
+    def test_controller_without_update_method_raises_error(self):
+        """验证没有实现 update 方法的控件会抛出 TypeError"""
+        from reactive.reactive import Reactivable
+
+        # 创建一个没有 update 方法的控件类
+        class InvalidController:
+            pass
+
+        # 创建响应式数据
+        data = {"name": "Alice"}
+        reactivable = Reactivable(data)
+        controller = InvalidController()
+
+        # 绑定控件应该抛出 TypeError
+        with self.assertRaises(TypeError) as context:
+            reactivable.bind_controller(controller)
+
+        # 验证错误消息
+        self.assertIn("必须实现 update(reactive_data) 方法", str(context.exception))
+        self.assertIn("InvalidController", str(context.exception))
+
+    def test_notify_with_invalid_controller_raises_error(self):
+        """验证 notify 方法在控件没有 update 方法时抛出 TypeError"""
+        from reactive.reactive import Reactivable
+
+        # 创建一个没有 update 方法的控件类
+        class InvalidController:
+            pass
+
+        # 创建响应式数据，并直接设置 _controller（绕过 bind_controller 的验证）
+        data = {"name": "Alice"}
+        reactivable = Reactivable(data)
+        reactivable._controller = InvalidController()
+
+        # 修改数据触发 notify，应该抛出 TypeError
+        with self.assertRaises(TypeError) as context:
+            reactivable.name = "Bob"
+
+        # 验证错误消息
+        self.assertIn("必须实现 update(reactive_data) 方法", str(context.exception))
+        self.assertIn("InvalidController", str(context.exception))
+
+
 if __name__ == "__main__":
     unittest.main()
