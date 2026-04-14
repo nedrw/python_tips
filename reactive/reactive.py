@@ -162,6 +162,80 @@ class CompositeCommand(Command):
             command.redo()
 
 
+class CommandManager:
+    """命令管理器（全局单例）"""
+
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.undo_stack = []
+            cls._instance.redo_stack = []
+            cls._instance._transaction_commands = None
+        return cls._instance
+
+    def execute(self, command):
+        """执行命令，并添加到 undo_stack"""
+        command.execute()
+
+        # 如果在事务中，记录命令；否则，直接添加到 undo_stack
+        if self._transaction_commands is not None:
+            self._transaction_commands.append(command)
+        else:
+            self.undo_stack.append(command)
+            # 清空 redo_stack
+            self.redo_stack.clear()
+            # 深度限制200
+            if len(self.undo_stack) > 200:
+                self.undo_stack.pop(0)
+
+    def undo(self):
+        """撤销命令"""
+        if self.undo_stack:
+            command = self.undo_stack.pop()
+            command.undo()
+            self.redo_stack.append(command)
+
+            # 深度限制200
+            if len(self.redo_stack) > 200:
+                self.redo_stack.pop(0)
+
+    def redo(self):
+        """重做命令"""
+        if self.redo_stack:
+            command = self.redo_stack.pop()
+            command.redo()
+            self.undo_stack.append(command)
+
+            # 深度限制200
+            if len(self.undo_stack) > 200:
+                self.undo_stack.pop(0)
+
+    def begin_transaction(self):
+        """开始事务"""
+        self._transaction_commands = []
+
+    def commit(self):
+        """提交事务"""
+        if self._transaction_commands:
+            # 将事务期间的多个命令合并为一个 CompositeCommand
+            composite = CompositeCommand(self._transaction_commands)
+            self.undo_stack.append(composite)
+            # 清空 redo_stack
+            self.redo_stack.clear()
+            # 深度限制200
+            if len(self.undo_stack) > 200:
+                self.undo_stack.pop(0)
+            # 清空事务命令列表
+            self._transaction_commands = None
+
+    def clear_history(self):
+        """清空 undo_stack 和 redo_stack"""
+        self.undo_stack.clear()
+        self.redo_stack.clear()
+
+
 class Reactivable:
     __exclude_attr = {
         "_value",

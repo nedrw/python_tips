@@ -22,9 +22,6 @@
 ### 3. Undo/Redo机制重构（命令模式）
 
 
-- [ ] 实现`CommandManager`全局单例：
-  - 命令栈：`undo_stack`、`redo_stack`，深度限制200
-  - 核心方法：`execute()`、`undo()`、`redo()`、`begin_transaction()`、`commit()`、`clear_history()`
 - [ ] Reactivable基类：类属性`_command_manager`，方法`_execute_command()`
 - [ ] 移除`_history`、`_redo`属性，变更时生成命令并提交
 

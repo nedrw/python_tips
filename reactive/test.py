@@ -318,5 +318,103 @@ class TestCommand(unittest.TestCase):
         self.assertEqual(reactivable["age"], 40)
 
 
+class TestCommandManager(unittest.TestCase):
+    """测试 CommandManager 全局单例的实现"""
+
+    def test_command_manager_is_singleton(self):
+        """验证 CommandManager 是一个全局单例"""
+        from reactive.reactive import CommandManager
+
+        # 多次获取 CommandManager 应该返回同一个实例
+        manager1 = CommandManager()
+        manager2 = CommandManager()
+        self.assertEqual(manager1, manager2)
+
+    def test_command_manager_execute(self):
+        """验证 execute() 方法执行命令并添加到 undo_stack"""
+        from reactive.reactive import CommandManager, ReactivableDict, SetItemCommand
+
+        # 创建一个 CommandManager
+        manager = CommandManager()
+        manager.clear_history()
+
+        # 创建一个 ReactivableDict
+        data = {"name": "Alice"}
+        reactivable = ReactivableDict(data)
+
+        # 创建一个 SetItemCommand
+        command = SetItemCommand(reactivable, "name", "Bob", "Alice")
+
+        # 执行命令
+        manager.execute(command)
+
+        # 验证命令已执行
+        self.assertEqual(reactivable["name"], "Bob")
+
+        # 验证命令已添加到 undo_stack
+        self.assertEqual(len(manager.undo_stack), 1)
+
+    def test_command_manager_undo_redo(self):
+        """验证 undo() 和 redo() 方法正确管理命令栈"""
+        from reactive.reactive import CommandManager, ReactivableDict, SetItemCommand
+
+        # 创建一个 CommandManager
+        manager = CommandManager()
+        manager.clear_history()
+
+        # 创建一个 ReactivableDict
+        data = {"name": "Alice"}
+        reactivable = ReactivableDict(data)
+
+        # 创建一个 SetItemCommand
+        command = SetItemCommand(reactivable, "name", "Bob", "Alice")
+
+        # 执行命令
+        manager.execute(command)
+        self.assertEqual(reactivable["name"], "Bob")
+        self.assertEqual(len(manager.undo_stack), 1)
+
+        # 撤销命令
+        manager.undo()
+        self.assertEqual(reactivable["name"], "Alice")
+        self.assertEqual(len(manager.undo_stack), 0)
+        self.assertEqual(len(manager.redo_stack), 1)
+
+        # 重做命令
+        manager.redo()
+        self.assertEqual(reactivable["name"], "Bob")
+        self.assertEqual(len(manager.undo_stack), 1)
+        self.assertEqual(len(manager.redo_stack), 0)
+
+    def test_command_manager_transaction(self):
+        """验证 begin_transaction() 和 commit() 方法"""
+        from reactive.reactive import CommandManager, ReactivableDict, SetItemCommand
+
+        # 创建一个 CommandManager
+        manager = CommandManager()
+        manager.clear_history()
+
+        # 创建一个 ReactivableDict
+        data = {"name": "Alice", "age": 30}
+        reactivable = ReactivableDict(data)
+
+        # 开始事务
+        manager.begin_transaction()
+
+        # 创建多个命令
+        command1 = SetItemCommand(reactivable, "name", "Bob", "Alice")
+        command2 = SetItemCommand(reactivable, "age", 40, 30)
+
+        # 执行多个命令
+        manager.execute(command1)
+        manager.execute(command2)
+
+        # 提交事务
+        manager.commit()
+
+        # 验证事务期间的多个命令被合并为一个 CompositeCommand
+        self.assertEqual(len(manager.undo_stack), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
