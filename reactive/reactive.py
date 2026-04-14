@@ -21,16 +21,24 @@ class ChangeHistory(Protocol):
 
 
 class BatchUpdate:
-    def __init__(self, data: ChangeHistory):
-        self._data = data
+    """批量更新上下文管理器"""
+
+    def __init__(self, reactivable):
+        self._reactivable = reactivable
+        self._transaction_context = None
 
     def __enter__(self):
-        self._data.switch(True)
+        # 开始事务
+        self._transaction_context = self._reactivable._command_manager.transaction()
+        self._transaction_context.__enter__()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._data.switch(False)
-        self._data.notify()
+        # 提交事务
+        self._transaction_context.__exit__(exc_type, exc_val, exc_tb)
+        # 发送通知
+        self._reactivable.notify()
+        return False
 
 
 class Command(ABC):
@@ -174,6 +182,21 @@ class CompositeCommand(Command):
             command.redo()
 
 
+class TransactionContext:
+    """事务上下文管理器"""
+
+    def __init__(self, command_manager):
+        self._command_manager = command_manager
+
+    def __enter__(self):
+        self._command_manager.begin_transaction()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._command_manager.commit()
+        return False  # 不抑制异常
+
+
 class CommandManager:
     """命令管理器（全局单例）"""
 
@@ -185,7 +208,6 @@ class CommandManager:
             cls._instance.undo_stack = []
             cls._instance.redo_stack = []
             cls._instance._transaction_commands = None
-            cls._instance._in_batch = False  # 全局批量更新标志
         return cls._instance
 
     def execute(self, command):
@@ -243,6 +265,10 @@ class CommandManager:
             # 清空事务命令列表
             self._transaction_commands = None
 
+    def transaction(self):
+        """返回事务上下文管理器"""
+        return TransactionContext(self)
+
     def clear_history(self):
         """清空 undo_stack 和 redo_stack"""
         self.undo_stack.clear()
@@ -287,8 +313,6 @@ class Reactivable:
         self._key = key
         self._controller = None
         self._observers = set()
-        self._batching = False
-        self._batch_record = None
 
     def _wrap_reactive(self, value):
         """
@@ -346,8 +370,8 @@ class Reactivable:
     def _execute_command(self, command):
         """执行命令并提交到命令管理器"""
         self._command_manager.execute(command)
-        # 使用 CommandManager 的全局批量更新标志，而不是实例的 _batching
-        if not self._command_manager._in_batch:
+        # 如果不在事务中，发送通知
+        if self._command_manager._transaction_commands is None:
             self.notify()
 
     def undo(self):
@@ -396,21 +420,8 @@ class Reactivable:
             )
         self._controller = controller
 
-    def switch(self, value: bool):
-        """开启或关闭批量更新模式"""
-        if value:
-            # 开始批量更新
-            self._batching = True
-            self._command_manager._in_batch = True  # 设置全局批量更新标志
-            self._command_manager.begin_transaction()
-        else:
-            # 结束批量更新
-            self._batching = False
-            self._command_manager._in_batch = False  # 清除全局批量更新标志
-            self._command_manager.commit()
-            self.notify()
-
     def batch_update(self):
+        """返回批量更新上下文管理器"""
         return BatchUpdate(self)
 
 
