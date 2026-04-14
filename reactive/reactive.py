@@ -173,6 +173,7 @@ class CommandManager:
             cls._instance.undo_stack = []
             cls._instance.redo_stack = []
             cls._instance._transaction_commands = None
+            cls._instance._in_batch = False  # 全局批量更新标志
         return cls._instance
 
     def execute(self, command):
@@ -243,19 +244,29 @@ class Reactivable:
         "_key",
         "_controller",
         "_observers",
-        "_history",
-        "_redo",
+        "_command_manager",
         "_batching",
         "_batch_record",
         "_wrap_reactive",
-        "_record_change",
+        "_execute_command",
         "notify",
         "subscribe",
         "undo",
         "redo",
         "switch",
         "batch_update",
+        # ReactivableList 方法
+        "append",
+        "insert",
+        "pop",
+        # ReactivableDict 方法
+        "keys",
+        "values",
+        "items",
+        "get",
     }
+
+    _command_manager = CommandManager()
 
     def __init__(self, value, parent=None, key=None):
         self._value = self._wrap_reactive(value)
@@ -263,8 +274,6 @@ class Reactivable:
         self._key = key
         self._controller = None
         self._observers = set()
-        self._history = []
-        self._redo = []
         self._batching = False
         self._batch_record = None
 
@@ -303,43 +312,40 @@ class Reactivable:
                 # 属性已存在，获取旧值并更新
                 old_value = self._value[key]
                 if old_value != value:
-                    self._value[key] = value
-                    self._record_change(old_value)
-                    if not self._batching:
-                        self.notify()
+                    # 包装新值（如果是字典或列表）
+                    wrapped_value = self._wrap_reactive(value)
+                    # 创建并执行命令
+                    command = SetItemCommand(self, key, wrapped_value, old_value)
+                    self._execute_command(command)
             else:
                 # 属性不存在（新增属性），设置值
-                self._value[key] = value
-                self._record_change(None)
-                if not self._batching:
-                    self.notify()
+                # 包装新值（如果是字典或列表）
+                wrapped_value = self._wrap_reactive(value)
+                # 创建并执行命令（old_value 为 None）
+                command = SetItemCommand(self, key, wrapped_value, None)
+                self._execute_command(command)
         else:
             object.__setattr__(self, key, value)
 
     def __str__(self):
         return str(self._value)
 
-    def _record_change(self, old_value):
-        if self._batching:
-            return
-        self._history.append((old_value, self._value))
-        self._redo.clear()
+    def _execute_command(self, command):
+        """执行命令并提交到命令管理器"""
+        self._command_manager.execute(command)
+        # 使用 CommandManager 的全局批量更新标志，而不是实例的 _batching
+        if not self._command_manager._in_batch:
+            self.notify()
 
     def undo(self):
-        # todo
-        if self._history:
-            old_value, new_value = self._history.pop()
-            self._value = old_value
-            self._redo.append(new_value)
-            self.notify()
+        """撤销操作：委托给 CommandManager"""
+        self._command_manager.undo()
+        self.notify()
 
     def redo(self):
-        # todo
-        if self._redo:
-            new_value = self._redo.pop()
-            self._history.append((self._value, new_value))
-            self._value = new_value
-            self.notify()
+        """重做操作：委托给 CommandManager"""
+        self._command_manager.redo()
+        self.notify()
 
     def notify(self):
         # 通知自己的观察者
@@ -359,12 +365,18 @@ class Reactivable:
         self._observers.add(callback)
 
     def switch(self, value: bool):
-        self._batching = value
+        """开启或关闭批量更新模式"""
         if value:
-            self._batch_record = self._value
-        elif self._batch_record:
-            self._record_change(self._batch_record)
-            self._batch_record = None
+            # 开始批量更新
+            self._batching = True
+            self._command_manager._in_batch = True  # 设置全局批量更新标志
+            self._command_manager.begin_transaction()
+        else:
+            # 结束批量更新
+            self._batching = False
+            self._command_manager._in_batch = False  # 清除全局批量更新标志
+            self._command_manager.commit()
+            self.notify()
 
     def batch_update(self):
         return BatchUpdate(self)
@@ -376,14 +388,14 @@ class ReactivableDict(Reactivable):
 
     def __setitem__(self, key, value):
         old_value = self._value.get(key)
-        self._value[key] = self._wrap_reactive(value)
-        self._record_change({key: old_value})
-        self.notify()
+        wrapped_value = self._wrap_reactive(value)
+        command = SetItemCommand(self, key, wrapped_value, old_value)
+        self._execute_command(command)
 
     def __delitem__(self, key):
-        old_value = self._value.pop(key)
-        self._record_change({key: old_value})
-        self.notify()
+        old_value = self._value[key]
+        command = DelItemCommand(self, key, old_value)
+        self._execute_command(command)
 
     def __len__(self):
         return len(self._value)
@@ -407,14 +419,14 @@ class ReactivableList(Reactivable):
 
     def __setitem__(self, index, value):
         old_value = self._value[index]
-        self._value[index] = self._wrap_reactive(value)
-        self._record_change([(index, old_value)])
-        self.notify()
+        wrapped_value = self._wrap_reactive(value)
+        command = SetItemCommand(self, index, wrapped_value, old_value)
+        self._execute_command(command)
 
     def __delitem__(self, index):
-        old_value = self._value.pop(index)
-        self._record_change([(index, old_value)])
-        self.notify()
+        old_value = self._value[index]
+        command = PopCommand(self, index, old_value)
+        self._execute_command(command)
 
     def __len__(self):
         return len(self._value)
@@ -423,19 +435,19 @@ class ReactivableList(Reactivable):
         return item in self._value
 
     def append(self, value):
-        self._value.append(self._wrap_reactive(value))
-        self._record_change([(len(self._value) - 1, None)])
-        self.notify()
+        wrapped_value = self._wrap_reactive(value)
+        command = AppendCommand(self, wrapped_value)
+        self._execute_command(command)
 
     def insert(self, index, value):
-        self._value.insert(index, self._wrap_reactive(value))
-        self._record_change([(index, None)])
-        self.notify()
+        wrapped_value = self._wrap_reactive(value)
+        command = InsertCommand(self, index, wrapped_value)
+        self._execute_command(command)
 
     def pop(self, index=-1):
-        old_value = self._value.pop(index)
-        self._record_change([(index, old_value)])
-        self.notify()
+        old_value = self._value[index]
+        command = PopCommand(self, index, old_value)
+        self._execute_command(command)
         return old_value
 
 

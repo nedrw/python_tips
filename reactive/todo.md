@@ -19,11 +19,21 @@
 
 - [ ] 实现路径追踪：记录完整变更路径（如`children[0].style.color`）
 
-### 3. Undo/Redo机制重构（命令模式）
+### 3. Undo/Redo机制重构（命令模式）✅ 已完成
 
+- [x] Reactivable基类：类属性`_command_manager`，方法`_execute_command()`
+- [x] 移除`_history`、`_redo`属性，变更时生成命令并提交
+- [x] 实现Command基类和具体命令（SetItemCommand, DelItemCommand, InsertCommand, AppendCommand, PopCommand, CompositeCommand）
+- [x] 实现CommandManager全局单例，支持undo/redo栈和事务机制
+- [x] ReactivableDict/ReactivableList所有修改操作使用命令模式
+- [x] 批量更新（batch_update）使用事务机制，一次性撤销所有变更
+- [x] 修复__getattribute__拦截方法访问的bug（将方法名添加到__exclude_attr）
+- [x] 所有24个测试通过
 
-- [ ] Reactivable基类：类属性`_command_manager`，方法`_execute_command()`
-- [ ] 移除`_history`、`_redo`属性，变更时生成命令并提交
+**实现亮点**：
+- 使用CompositeCommand实现事务，批量更新期间所有命令合并为一个复合命令
+- 添加全局批量更新标志`_in_batch`，解决嵌套对象的批量状态同步问题
+- 命令模式支持深度限制200，防止内存溢出
 
 ### 4. 控件引用支持
 
