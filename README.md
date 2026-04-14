@@ -13,10 +13,15 @@ python_tips/
 │   ├── decorator.py     # 装饰器用法
 │   ├── descriptor.py    # 描述符协议
 │   ├── format-string.py # f-string 格式化技巧
+│   ├── generator.py     # 生成器与yield机制
 │   ├── itertools.py     # itertools 迭代工具
 │   ├── matmul.py        # 矩阵乘法运算符
 │   ├── protocol.py      # 协议与类型提示
 │   ├── single_dispatch.py # 单分派泛函数
+│   ├── slots.py         # __slots__内存优化
+│   ├── walrus_operator.py # 海象运算符（赋值表达式）
+│   ├── chained_operators.py # 链式运算符
+│   ├── loop_else.py     # 循环的else子句
 │   └── with.py          # 上下文管理器
 └── reactive/            # 响应式编程模块
     ├── reactive.py
@@ -31,6 +36,11 @@ python_tips/
 - **f-string 格式化**：表达式、日期时间、数字格式化、文本对齐、自定义 `__format__`
 - **上下文管理器**：资源管理与上下文协议
 - **迭代工具**：高效迭代与组合操作
+- **生成器与yield**：基本生成器、生成器表达式、惰性求值、内存优化、无限序列、管道模式、yield from语法、协程基础（send/throw/close）
+- **__slots__内存优化**：限制属性集合，节省内存，提升性能
+- **循环else子句**：循环正常完成时的处理机制，配合break使用
+- **链式运算符**：链式比较、链式赋值、链式方法调用
+- **海象运算符**：Python 3.8赋值表达式，在表达式内部赋值
 - **协议**：结构化子类型与类型提示
 - **单分派**：基于参数类型的函数重载
 - **矩阵乘法 (@)**：自定义矩阵运算
