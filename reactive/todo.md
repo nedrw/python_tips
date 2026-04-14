@@ -16,8 +16,7 @@
 ## P0 - 紧急修复
 
 ### 2. 嵌套对象追踪
-- [ ] 添加`_parent`、`_key`属性（父对象引用、在父对象中的key/index）
-- [ ] 实现变更冒泡：子对象变更时通知父对象
+
 - [ ] 实现路径追踪：记录完整变更路径（如`children[0].style.color`）
 
 ### 3. Undo/Redo机制重构（命令模式）
@@ -31,8 +30,7 @@
 - [ ] 移除`_history`、`_redo`属性，变更时生成命令并提交
 
 ### 4. 控件引用支持
-- [ ] 添加`_controller`属性（默认为None）
-- [ ] 实现`notify()`自动调用`_controller.update(self)`
+
 - [ ] 定义标准接口：控件必须实现`update(reactive_data)`方法
 
 ## P1 - 功能完善

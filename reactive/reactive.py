@@ -24,6 +24,8 @@ class Reactivable:
     __exclude_attr = {
         "_value",
         "_parent",
+        "_key",
+        "_controller",
         "_observers",
         "_history",
         "_redo",
@@ -39,9 +41,11 @@ class Reactivable:
         "batch_update",
     }
 
-    def __init__(self, value, parent=None):
+    def __init__(self, value, parent=None, key=None):
         self._value = self._wrap_reactive(value)
         self._parent = parent
+        self._key = key
+        self._controller = None
         self._observers = set()
         self._history = []
         self._redo = []
@@ -63,9 +67,9 @@ class Reactivable:
 
         for k, v in iterable:
             if isinstance(v, list):
-                value[k] = ReactivableList(v, parent=self)
+                value[k] = ReactivableList(v, parent=self, key=k)
             if isinstance(v, dict):
-                value[k] = ReactivableDict(v, parent=self)
+                value[k] = ReactivableDict(v, parent=self, key=k)
         return value
 
     def __getattribute__(self, item):
@@ -122,9 +126,18 @@ class Reactivable:
             self.notify()
 
     def notify(self):
-        # todo
+        # 通知自己的观察者
         for observer in self._observers:
             observer(self._value)
+
+        # 如果绑定了控件，直接通知控件
+        if self._controller is not None:
+            if hasattr(self._controller, "update"):
+                self._controller.update(self)
+        else:
+            # 没有绑定控件，通知父对象（变更冒泡）
+            if self._parent is not None:
+                self._parent.notify()
 
     def subscribe(self, callback):
         self._observers.add(callback)
