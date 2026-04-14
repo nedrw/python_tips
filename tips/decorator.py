@@ -111,7 +111,11 @@ def say_welcome():
 # func = decorator(func)
 
 
-@finfo
+@finfo(
+    description="演示装饰器的各种用法：简单装饰器、带参数装饰器、类装饰器",
+    tags=["decorator", "metaprogramming"],
+    difficulty="intermediate",
+)
 def main():
     say_hello()
 

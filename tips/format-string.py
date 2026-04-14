@@ -1,7 +1,6 @@
 from tips import finfo
 
 
-@finfo
 def base_fstring():
     """
     Base function to demonstrate f-strings in Python.
@@ -13,7 +12,6 @@ def base_fstring():
     print(f"x: {x}, y: {y}")
 
 
-@finfo
 def expression_fstring():
     """
     Prints expression in an f-string.
@@ -25,7 +23,6 @@ def expression_fstring():
     print(f"{x=}, {y=}, {x > y = }")
 
 
-@finfo
 def nested_fstring():
     """
     Generates and prints a formatted string using nested f-strings in Python.
@@ -37,7 +34,6 @@ def nested_fstring():
     print(f"{f'{x=}'}, {y=}")
 
 
-@finfo
 def number_fstring():
     """
     A function that demonstrates the usage of f-strings for formatting
@@ -53,7 +49,6 @@ def number_fstring():
     print(f"{y=:.2f}, {y=:.1f}")
 
 
-@finfo
 def datetime_fstring():
     """
     Demonstrates the usage of f-strings with datetime objects to format and print
@@ -69,7 +64,6 @@ def datetime_fstring():
     print(f"{x:%y-%m-%d %H:%M:%S}")
 
 
-@finfo
 def align_fstring():
     """
     Demonstrates various string alignment and formatting techniques using f-strings in Python.
@@ -87,7 +81,6 @@ def align_fstring():
     print(f"{x:=>{y}}...")
 
 
-@finfo
 def struct_fstring():
     """
     Demonstrates the usage of custom __format__ method in a class to control

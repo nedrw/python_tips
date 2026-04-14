@@ -1,5 +1,7 @@
 import atexit
 
+from tips import finfo
+
 
 # 定义一个清理函数
 def cleanup():
@@ -14,6 +16,7 @@ def second():
     print("Second cleanup")
 
 
+@finfo
 def main():
     print("Starting program")
     # 注册函数，在程序退出时自动调用，LIFO
