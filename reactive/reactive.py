@@ -14,12 +14,6 @@ class ControllerProtocol(Protocol):
         ...
 
 
-class ChangeHistory(Protocol):
-    def notify(self) -> None: ...
-
-    def switch(self, value: bool) -> None: ...
-
-
 class BatchUpdate:
     """批量更新上下文管理器"""
 
@@ -34,10 +28,11 @@ class BatchUpdate:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # 提交事务
+        # 提交或回滚事务
         self._transaction_context.__exit__(exc_type, exc_val, exc_tb)
-        # 发送通知
-        self._reactivable.notify()
+        # 只有在事务提交时才发送通知
+        if exc_type is None:
+            self._reactivable.notify()
         return False
 
 
@@ -193,7 +188,12 @@ class TransactionContext:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._command_manager.commit()
+        if exc_type is None:
+            # 没有异常，提交事务
+            self._command_manager.commit()
+        else:
+            # 有异常，回滚事务
+            self._command_manager.rollback()
         return False  # 不抑制异常
 
 
@@ -264,6 +264,10 @@ class CommandManager:
                 self.undo_stack.pop(0)
             # 清空事务命令列表
             self._transaction_commands = None
+
+    def rollback(self):
+        """回滚事务（不记录到 undo_stack）"""
+        self._transaction_commands = None
 
     def transaction(self):
         """返回事务上下文管理器"""
