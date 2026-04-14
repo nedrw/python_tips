@@ -1,6 +1,5 @@
 import glob
 import importlib
-import inspect
 import time
 from typing import List, Tuple
 
@@ -41,7 +40,7 @@ def run_all_examples() -> Tuple[int, List[Tuple[str, str]]]:
                 func = mod.main
 
                 # 检查是否有@finfo装饰器
-                if hasattr(func, "_is_example") and func._is_example:
+                if hasattr(func, "_is_example") and func._is_example:  # type: ignore
                     # 有@finfo装饰器，使用增强显示
                     func()
                 else:
@@ -49,7 +48,7 @@ def run_all_examples() -> Tuple[int, List[Tuple[str, str]]]:
                     module_name = module_path.split(".")[-1]
                     print(f"\n{'=' * 60}")
                     print(f"示例模块: {module_name}")
-                    print(f"函数: main")
+                    print("函数: main")
                     print("=" * 60)
 
                     start_time = time.perf_counter()
@@ -105,14 +104,14 @@ def run_single_example(example_name: str) -> bool:
             func = module.main
 
             # 检查是否有@finfo装饰器
-            if hasattr(func, "_is_example") and func._is_example:
+            if hasattr(func, "_is_example") and func._is_example:  # type: ignore
                 # 有@finfo装饰器，使用增强显示
                 func()
             else:
                 # 没有@finfo装饰器，显示基本信息
                 print(f"\n{'=' * 60}")
                 print(f"示例模块: {example_name}")
-                print(f"函数: main")
+                print("函数: main")
                 print("=" * 60)
 
                 start_time = time.perf_counter()

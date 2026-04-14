@@ -12,13 +12,15 @@ class MyContextManager:
             print(f"An exception occurred: {exc_val}")
         return True  # 抑制异常
 
+
 @finfo
 def main():
     # 使用自定义上下文管理器
-    with MyContextManager() as manager:
+    with MyContextManager() as _manager:
         print("Inside the context")
         # 如果发生异常，会被__exit__处理
         raise ValueError("Something went wrong!")
+
 
 # with语句用于简化资源管理，确保资源（如文件、网络连接、锁等）在使用后被正确释放或清理
 # 核心原理基于上下文管理器（Context Manager），即实现了`__enter__`和`__exit__`方法的对象。

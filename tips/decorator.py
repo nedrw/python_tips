@@ -36,6 +36,7 @@ def repeat(num_times):
     # 带参数的装饰器
     def decorator(func):
         def wrapper(*args, **kwargs):
+            result = None
             for _ in range(num_times):
                 result = func(*args, **kwargs)
             return result

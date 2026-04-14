@@ -471,7 +471,7 @@ class TestControllerProtocol(unittest.TestCase):
 
         # 绑定控件应该抛出 TypeError
         with self.assertRaises(TypeError) as context:
-            reactivable.bind_controller(controller)
+            reactivable.bind_controller(controller)  # type: ignore
 
         # 验证错误消息
         self.assertIn("必须实现 update(reactive_data) 方法", str(context.exception))
@@ -488,7 +488,7 @@ class TestControllerProtocol(unittest.TestCase):
         # 创建响应式数据，并直接设置 _controller（绕过 bind_controller 的验证）
         data = {"name": "Alice"}
         reactivable = Reactivable(data)
-        reactivable._controller = InvalidController()
+        reactivable._controller = InvalidController()  # type: ignore
 
         # 修改数据触发 notify，应该抛出 TypeError
         with self.assertRaises(TypeError) as context:

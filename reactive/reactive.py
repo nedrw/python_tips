@@ -17,7 +17,7 @@ class ControllerProtocol(Protocol):
 class BatchUpdate:
     """批量更新上下文管理器"""
 
-    def __init__(self, reactivable):
+    def __init__(self, reactivable: "Reactivable"):
         self._reactivable = reactivable
         self._transaction_context = None
 
@@ -29,6 +29,7 @@ class BatchUpdate:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # 提交事务
+        assert self._transaction_context is not None  # 类型检查器需要这个断言
         self._transaction_context.__exit__(exc_type, exc_val, exc_tb)
         # 发送通知
         self._reactivable.notify()
@@ -37,6 +38,11 @@ class BatchUpdate:
 
 class Command(ABC):
     """命令基类，定义 undo() 和 redo() 方法"""
+
+    @abstractmethod
+    def execute(self):
+        """执行命令"""
+        pass
 
     @abstractmethod
     def undo(self):
@@ -199,12 +205,16 @@ class CommandManager:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance.undo_stack = []
-            cls._instance.redo_stack = []
-            cls._instance._transaction_commands = None
         return cls._instance
 
-    def execute(self, command):
+    def __init__(self):
+        # 避免重复初始化（单例模式）
+        if not hasattr(self, "undo_stack"):
+            self.undo_stack: list[Command] = []
+            self.redo_stack: list[Command] = []
+            self._transaction_commands: list[Command] | None = None
+
+    def execute(self, command: Command) -> None:
         """执行命令，并添加到 undo_stack"""
         command.execute()
 
@@ -219,37 +229,37 @@ class CommandManager:
             if len(self.undo_stack) > 200:
                 self.undo_stack.pop(0)
 
-    def undo(self):
+    def undo(self) -> None:
         """撤销命令"""
         if self.undo_stack:
-            command = self.undo_stack.pop()
+            command: Command = self.undo_stack.pop()
             command.undo()
             self.redo_stack.append(command)
 
-            # 深度限制200
-            if len(self.redo_stack) > 200:
-                self.redo_stack.pop(0)
+        # 深度限制200
+        if len(self.redo_stack) > 200:
+            self.redo_stack.pop(0)
 
-    def redo(self):
+    def redo(self) -> None:
         """重做命令"""
         if self.redo_stack:
-            command = self.redo_stack.pop()
+            command: Command = self.redo_stack.pop()
             command.redo()
             self.undo_stack.append(command)
 
-            # 深度限制200
-            if len(self.undo_stack) > 200:
-                self.undo_stack.pop(0)
+        # 深度限制200
+        if len(self.undo_stack) > 200:
+            self.undo_stack.pop(0)
 
     def begin_transaction(self):
         """开始事务"""
         self._transaction_commands = []
 
-    def commit(self):
+    def commit(self) -> None:
         """提交事务"""
         if self._transaction_commands:
             # 将事务期间的多个命令合并为一个 CompositeCommand
-            composite = CompositeCommand(self._transaction_commands)
+            composite: Command = CompositeCommand(self._transaction_commands)
             self.undo_stack.append(composite)
             # 清空 redo_stack
             self.redo_stack.clear()
@@ -263,7 +273,7 @@ class CommandManager:
         """返回事务上下文管理器"""
         return TransactionContext(self)
 
-    def clear_history(self):
+    def clear_history(self) -> None:
         """清空 undo_stack 和 redo_stack"""
         self.undo_stack.clear()
         self.redo_stack.clear()
@@ -420,6 +430,8 @@ class Reactivable:
 
 
 class ReactivableDict(Reactivable):
+    _value: dict
+
     def __getitem__(self, key):
         return self._value[key]
 
@@ -451,6 +463,8 @@ class ReactivableDict(Reactivable):
 
 
 class ReactivableList(Reactivable):
+    _value: list
+
     def __getitem__(self, index):
         return self._value[index]
 

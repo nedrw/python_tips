@@ -7,7 +7,7 @@ def finfo(
     func: Optional[Callable] = None,
     *,
     description: str = "",
-    tags: list[str] = None,
+    tags: list[str] | None = None,
     difficulty: str = "beginner",
 ) -> Callable:
     """
@@ -65,10 +65,10 @@ def finfo(
                 raise
 
         # 附加元数据，用于示例发现
-        wrapper._is_example = True
-        wrapper._description = description
-        wrapper._tags = tags or []
-        wrapper._difficulty = difficulty
+        wrapper._is_example = True  # type: ignore
+        wrapper._description = description  # type: ignore
+        wrapper._tags = tags or []  # type: ignore
+        wrapper._difficulty = difficulty  # type: ignore
 
         return wrapper
 
