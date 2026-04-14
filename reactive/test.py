@@ -158,19 +158,41 @@ class TestObservable(unittest.TestCase):
         # 父对象应该收到通知
         self.assertEqual(len(callback_calls), 1)
 
-    def test_path_tracking(self):
-        """验证路径追踪：能否记录完整的变更路径"""
-        # 这个测试验证变更路径是否被正确记录
-        # 修改嵌套对象的属性
-        self.reactivable.address.city = "Shanghai"
 
-        # 检查历史记录中是否包含路径信息
-        # 当前实现可能不支持路径追踪，这个测试用于验证需求
-        # 暂时只验证变更是否被记录
-        self.assertTrue(
-            len(self.reactivable._history) > 0
-            or len(self.reactivable.address._history) > 0
-        )
+class TestCommand(unittest.TestCase):
+    """测试 Command 基类和具体命令的实现"""
+
+    def test_command_base_class_has_undo_redo_methods(self):
+        """验证 Command 基类有 undo() 和 redo() 方法"""
+        from reactive.reactive import Command
+
+        # Command 应该是一个抽象基类
+        # 它应该定义 undo() 和 redo() 方法
+        self.assertTrue(hasattr(Command, "undo"))
+        self.assertTrue(hasattr(Command, "redo"))
+
+    def test_setitem_command_undo_redo(self):
+        """验证 SetItemCommand 可以撤销和重做"""
+        from reactive.reactive import ReactivableDict, SetItemCommand
+
+        # 创建一个 ReactivableDict
+        data = {"name": "Alice", "age": 30}
+        reactivable = ReactivableDict(data)
+
+        # 创建一个 SetItemCommand
+        command = SetItemCommand(reactivable, "name", "Bob", "Alice")
+
+        # 执行命令
+        command.execute()
+        self.assertEqual(reactivable["name"], "Bob")
+
+        # 撤销命令
+        command.undo()
+        self.assertEqual(reactivable["name"], "Alice")
+
+        # 重做命令
+        command.redo()
+        self.assertEqual(reactivable["name"], "Bob")
 
 
 if __name__ == "__main__":

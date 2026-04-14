@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Protocol
 
 
@@ -18,6 +19,42 @@ class BatchUpdate:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._data.switch(False)
         self._data.notify()
+
+
+class Command(ABC):
+    """命令基类，定义 undo() 和 redo() 方法"""
+
+    @abstractmethod
+    def undo(self):
+        """撤销命令"""
+        pass
+
+    @abstractmethod
+    def redo(self):
+        """重做命令"""
+        pass
+
+
+class SetItemCommand(Command):
+    """设置键值命令"""
+
+    def __init__(self, target, key, new_value, old_value):
+        self.target = target
+        self.key = key
+        self.new_value = new_value
+        self.old_value = old_value
+
+    def execute(self):
+        """执行命令：设置新值"""
+        self.target._value[self.key] = self.new_value
+
+    def undo(self):
+        """撤销命令：恢复旧值"""
+        self.target._value[self.key] = self.old_value
+
+    def redo(self):
+        """重做命令：再次设置新值"""
+        self.target._value[self.key] = self.new_value
 
 
 class Reactivable:
