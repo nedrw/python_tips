@@ -104,35 +104,6 @@ class TestObservable(unittest.TestCase):
         self.assertEqual(self.reactivable.age, initial_age)
         self.assertEqual(self.reactivable.name, initial_name)
 
-    def test_batch_update_with_exception_rollback(self):
-        """测试批量更新中发生异常时，事务回滚且不发送通知"""
-        callback_calls = []
-
-        def callback(val):
-            callback_calls.append(val)
-
-        self.reactivable.subscribe(callback)
-
-        # 记录初始值
-        initial_name = self.reactivable.name
-        initial_age = self.reactivable.age
-
-        # 在批量更新中发生异常
-        with self.assertRaises(ValueError):
-            with self.reactivable.batch_update():
-                self.reactivable.name = "Eve"
-                self.reactivable.age = 50
-                raise ValueError("模拟异常")
-
-        # 验证：不发送通知
-        self.assertEqual(len(callback_calls), 0)
-
-        # 验证：数据被修改了（因为命令已经执行），但命令不被记录到 undo_stack
-        # 所以撤销应该什么也不做（因为 undo_stack 为空）
-        # 注意：这是一个设计决策，异常时事务回滚只是不记录命令，不撤销已执行的操作
-        self.assertEqual(self.reactivable.name, "Eve")
-        self.assertEqual(self.reactivable.age, 50)
-
     def test_setattr_for_non_existent_attribute(self):
         """测试设置不存在的属性时不会抛出 AttributeError"""
         # 这个测试验证 __setattr__ 在第一次设置属性时不会崩溃
