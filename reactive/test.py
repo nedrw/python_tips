@@ -194,6 +194,99 @@ class TestCommand(unittest.TestCase):
         command.redo()
         self.assertEqual(reactivable["name"], "Bob")
 
+    def test_delitem_command_undo_redo(self):
+        """验证 DelItemCommand 可以撤销和重做删除操作"""
+        from reactive.reactive import DelItemCommand, ReactivableDict
+
+        # 创建一个 ReactivableDict
+        data = {"name": "Alice", "age": 30}
+        reactivable = ReactivableDict(data)
+
+        # 创建一个 DelItemCommand
+        command = DelItemCommand(reactivable, "age", 30)
+
+        # 执行命令
+        command.execute()
+        self.assertNotIn("age", reactivable._value)
+
+        # 撤销命令
+        command.undo()
+        self.assertIn("age", reactivable._value)
+        self.assertEqual(reactivable["age"], 30)
+
+        # 重做命令
+        command.redo()
+        self.assertNotIn("age", reactivable._value)
+
+    def test_insert_command_undo_redo(self):
+        """验证 InsertCommand 可以撤销和重做插入操作"""
+        from reactive.reactive import InsertCommand, ReactivableList
+
+        # 创建一个 ReactivableList
+        data = ["a", "b", "c"]
+        reactivable = ReactivableList(data)
+
+        # 创建一个 InsertCommand
+        command = InsertCommand(reactivable, 1, "x")
+
+        # 执行命令
+        command.execute()
+        self.assertEqual(reactivable._value, ["a", "x", "b", "c"])
+
+        # 撤销命令
+        command.undo()
+        self.assertEqual(reactivable._value, ["a", "b", "c"])
+
+        # 重做命令
+        command.redo()
+        self.assertEqual(reactivable._value, ["a", "x", "b", "c"])
+
+    def test_append_command_undo_redo(self):
+        """验证 AppendCommand 可以撤销和重做追加操作"""
+        from reactive.reactive import AppendCommand, ReactivableList
+
+        # 创建一个 ReactivableList
+        data = ["a", "b"]
+        reactivable = ReactivableList(data)
+
+        # 创建一个 AppendCommand
+        command = AppendCommand(reactivable, "c")
+
+        # 执行命令
+        command.execute()
+        self.assertEqual(reactivable._value, ["a", "b", "c"])
+
+        # 撤销命令
+        command.undo()
+        self.assertEqual(reactivable._value, ["a", "b"])
+
+        # 重做命令
+        command.redo()
+        self.assertEqual(reactivable._value, ["a", "b", "c"])
+
+    def test_pop_command_undo_redo(self):
+        """验证 PopCommand 可以撤销和重做弹出操作"""
+        from reactive.reactive import PopCommand, ReactivableList
+
+        # 创建一个 ReactivableList
+        data = ["a", "b", "c"]
+        reactivable = ReactivableList(data)
+
+        # 创建一个 PopCommand
+        command = PopCommand(reactivable, 1, "b")
+
+        # 执行命令
+        command.execute()
+        self.assertEqual(reactivable._value, ["a", "c"])
+
+        # 撤销命令
+        command.undo()
+        self.assertEqual(reactivable._value, ["a", "b", "c"])
+
+        # 重做命令
+        command.redo()
+        self.assertEqual(reactivable._value, ["a", "c"])
+
 
 if __name__ == "__main__":
     unittest.main()

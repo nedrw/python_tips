@@ -57,6 +57,89 @@ class SetItemCommand(Command):
         self.target._value[self.key] = self.new_value
 
 
+class DelItemCommand(Command):
+    """删除键值命令"""
+
+    def __init__(self, target, key, old_value):
+        self.target = target
+        self.key = key
+        self.old_value = old_value
+
+    def execute(self):
+        """执行命令：删除键值"""
+        del self.target._value[self.key]
+
+    def undo(self):
+        """撤销命令：恢复键值"""
+        self.target._value[self.key] = self.old_value
+
+    def redo(self):
+        """重做命令：再次删除键值"""
+        del self.target._value[self.key]
+
+
+class InsertCommand(Command):
+    """插入元素命令"""
+
+    def __init__(self, target, index, value):
+        self.target = target
+        self.index = index
+        self.value = value
+
+    def execute(self):
+        """执行命令：插入元素"""
+        self.target._value.insert(self.index, self.value)
+
+    def undo(self):
+        """撤销命令：删除插入的元素"""
+        del self.target._value[self.index]
+
+    def redo(self):
+        """重做命令：再次插入元素"""
+        self.target._value.insert(self.index, self.value)
+
+
+class AppendCommand(Command):
+    """追加元素命令"""
+
+    def __init__(self, target, value):
+        self.target = target
+        self.value = value
+
+    def execute(self):
+        """执行命令：追加元素"""
+        self.target._value.append(self.value)
+
+    def undo(self):
+        """撤销命令：删除追加的元素"""
+        self.target._value.pop()
+
+    def redo(self):
+        """重做命令：再次追加元素"""
+        self.target._value.append(self.value)
+
+
+class PopCommand(Command):
+    """弹出元素命令"""
+
+    def __init__(self, target, index, old_value):
+        self.target = target
+        self.index = index
+        self.old_value = old_value
+
+    def execute(self):
+        """执行命令：弹出元素"""
+        self.target._value.pop(self.index)
+
+    def undo(self):
+        """撤销命令：恢复弹出的元素"""
+        self.target._value.insert(self.index, self.old_value)
+
+    def redo(self):
+        """重做命令：再次弹出元素"""
+        self.target._value.pop(self.index)
+
+
 class Reactivable:
     __exclude_attr = {
         "_value",

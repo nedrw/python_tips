@@ -20,7 +20,7 @@
 - [ ] 实现路径追踪：记录完整变更路径（如`children[0].style.color`）
 
 ### 3. Undo/Redo机制重构（命令模式）
-- [ ] 实现具体命令：`DelItemCommand`、`InsertCommand`、`AppendCommand`、`PopCommand`
+
 - [ ] 实现`CompositeCommand`（事务支持）
 - [ ] 实现`CommandManager`全局单例：
   - 命令栈：`undo_stack`、`redo_stack`，深度限制200
