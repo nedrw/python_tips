@@ -287,6 +287,36 @@ class TestCommand(unittest.TestCase):
         command.redo()
         self.assertEqual(reactivable._value, ["a", "c"])
 
+    def test_composite_command_undo_redo(self):
+        """验证 CompositeCommand 可以撤销和重做多个子命令"""
+        from reactive.reactive import CompositeCommand, ReactivableDict, SetItemCommand
+
+        # 创建一个 ReactivableDict
+        data = {"name": "Alice", "age": 30}
+        reactivable = ReactivableDict(data)
+
+        # 创建多个子命令
+        command1 = SetItemCommand(reactivable, "name", "Bob", "Alice")
+        command2 = SetItemCommand(reactivable, "age", 40, 30)
+
+        # 创建一个 CompositeCommand
+        composite = CompositeCommand([command1, command2])
+
+        # 执行命令
+        composite.execute()
+        self.assertEqual(reactivable["name"], "Bob")
+        self.assertEqual(reactivable["age"], 40)
+
+        # 撤销命令（逆序撤销）
+        composite.undo()
+        self.assertEqual(reactivable["name"], "Alice")
+        self.assertEqual(reactivable["age"], 30)
+
+        # 重做命令（正序重做）
+        composite.redo()
+        self.assertEqual(reactivable["name"], "Bob")
+        self.assertEqual(reactivable["age"], 40)
+
 
 if __name__ == "__main__":
     unittest.main()

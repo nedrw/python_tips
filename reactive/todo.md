@@ -21,7 +21,7 @@
 
 ### 3. Undo/Redo机制重构（命令模式）
 
-- [ ] 实现`CompositeCommand`（事务支持）
+
 - [ ] 实现`CommandManager`全局单例：
   - 命令栈：`undo_stack`、`redo_stack`，深度限制200
   - 核心方法：`execute()`、`undo()`、`redo()`、`begin_transaction()`、`commit()`、`clear_history()`

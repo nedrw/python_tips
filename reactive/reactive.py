@@ -140,6 +140,28 @@ class PopCommand(Command):
         self.target._value.pop(self.index)
 
 
+class CompositeCommand(Command):
+    """复合命令（事务支持）"""
+
+    def __init__(self, commands):
+        self.commands = commands
+
+    def execute(self):
+        """执行命令：执行所有子命令（正序）"""
+        for command in self.commands:
+            command.execute()
+
+    def undo(self):
+        """撤销命令：撤销所有子命令（逆序）"""
+        for command in reversed(self.commands):
+            command.undo()
+
+    def redo(self):
+        """重做命令：重做所有子命令（正序）"""
+        for command in self.commands:
+            command.redo()
+
+
 class Reactivable:
     __exclude_attr = {
         "_value",
