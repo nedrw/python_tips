@@ -15,10 +15,6 @@
 
 ## P0 - 紧急修复
 
-### 1. 崩溃Bug修复
-- [ ] `Reactivable.__setattr__`：捕获AttributeError或检查`key in self.__dict__`
-- [ ] `ReactivableList.__delitem__`：先获取值再删除，避免重复操作
-
 ### 2. 嵌套对象追踪
 - [ ] 添加`_parent`、`_key`属性（父对象引用、在父对象中的key/index）
 - [ ] 实现变更冒泡：子对象变更时通知父对象

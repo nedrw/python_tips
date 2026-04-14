@@ -71,15 +71,28 @@ class Reactivable:
     def __getattribute__(self, item):
         if item in Reactivable.__exclude_attr:
             return object.__getattribute__(self, item)
-        return object.__getattribute__(self._value, item)
+        try:
+            return self._value[item]
+        except (KeyError, TypeError):
+            return object.__getattribute__(self._value, item)
 
     def __setattr__(self, key, value):
         if key not in Reactivable.__exclude_attr:
-            old_value = object.__getattribute__(self, key)
-            if old_value != value:
-                self._value = value
-                self._record_change(old_value)
-                self.notify()
+            # 检查属性是否已存在于 _value 中
+            if key in self._value:
+                # 属性已存在，获取旧值并更新
+                old_value = self._value[key]
+                if old_value != value:
+                    self._value[key] = value
+                    self._record_change(old_value)
+                    if not self._batching:
+                        self.notify()
+            else:
+                # 属性不存在（新增属性），设置值
+                self._value[key] = value
+                self._record_change(None)
+                if not self._batching:
+                    self.notify()
         else:
             object.__setattr__(self, key, value)
 
@@ -140,9 +153,14 @@ class ReactivableDict(Reactivable):
 
     def __delitem__(self, key):
         old_value = self._value.pop(key)
-        del self._value[key]
         self._record_change({key: old_value})
         self.notify()
+
+    def __len__(self):
+        return len(self._value)
+
+    def __contains__(self, key):
+        return key in self._value
 
     def keys(self):
         return self._value.keys()
@@ -166,9 +184,14 @@ class ReactivableList(Reactivable):
 
     def __delitem__(self, index):
         old_value = self._value.pop(index)
-        del self._value[index]
         self._record_change([(index, old_value)])
         self.notify()
+
+    def __len__(self):
+        return len(self._value)
+
+    def __contains__(self, item):
+        return item in self._value
 
     def append(self, value):
         self._value.append(self._wrap_reactive(value))
