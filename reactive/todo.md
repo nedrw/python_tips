@@ -3,7 +3,8 @@
 ## 核心架构
 
 ### 类层级结构
-- Reactivable（基类）：响应式数据包装、变更通知、undo/redo
+- Reactivable（基类）：响应式数据包装、变更通知
+- CommandManager（全局单例）：命令管理、undo/redo栈、事务支持
 - ReactivableDict：字典类型响应式实现
 - ReactivableList：列表类型响应式实现
 
@@ -15,20 +16,23 @@
 ## P0 - 紧急修复
 
 ### 1. 崩溃Bug修复
-- [ ] `Reactivable.__setattr__`：首次设置属性时`object.__getattribute__`抛异常
-  - 方案：捕获AttributeError或检查`key in self.__dict__`
-- [ ] `ReactivableList.__delitem__`：先pop后del导致索引错误
-  - 方案：先获取值再删除，避免重复操作
+- [ ] `Reactivable.__setattr__`：捕获AttributeError或检查`key in self.__dict__`
+- [ ] `ReactivableList.__delitem__`：先获取值再删除，避免重复操作
 
 ### 2. 嵌套对象追踪
-- [ ] 添加`_parent`和`_key`属性记录父对象
+- [ ] 添加`_parent`、`_key`属性（父对象引用、在父对象中的key/index）
 - [ ] 实现变更冒泡：子对象变更时通知父对象
 - [ ] 实现路径追踪：记录完整变更路径（如`children[0].style.color`）
 
-### 3. Undo/Redo机制重构
-- [ ] 基于路径的历史记录：记录`(path, old_value, new_value)`
-- [ ] 实现路径解析：根据路径定位属性
-- [ ] 不再记录整体对象快照
+### 3. Undo/Redo机制重构（命令模式）
+- [ ] 设计`Command`基类（`undo()`、`redo()`方法）
+- [ ] 实现具体命令：`SetItemCommand`、`DelItemCommand`、`InsertCommand`、`AppendCommand`、`PopCommand`
+- [ ] 实现`CompositeCommand`（事务支持）
+- [ ] 实现`CommandManager`全局单例：
+  - 命令栈：`undo_stack`、`redo_stack`，深度限制200
+  - 核心方法：`execute()`、`undo()`、`redo()`、`begin_transaction()`、`commit()`、`clear_history()`
+- [ ] Reactivable基类：类属性`_command_manager`，方法`_execute_command()`
+- [ ] 移除`_history`、`_redo`属性，变更时生成命令并提交
 
 ### 4. 控件引用支持
 - [ ] 添加`_controller`属性（默认为None）
@@ -43,7 +47,6 @@
 
 ### 6. 批量更新优化
 - [ ] 修复`batch_update`逻辑
-- [ ] 支持嵌套事务
 
 ### 7. 通知机制增强
 - [ ] 传递详细变更信息（path、type、old_value、new_value）
@@ -52,14 +55,12 @@
 ## P2 - 边界与优化
 
 ### 8. 类型处理完善
-- [ ] 处理基础类型（int/str/float）
-- [ ] 处理特殊类型（tuple/set/None）
+- [ ] 处理基础类型（int/str/float）和特殊类型（tuple/set/None）
 - [ ] 避免重复包装已包装对象
 
 ### 9. 性能优化
 - [ ] 惰性包装：只在访问时才包装嵌套对象
 - [ ] 防抖高频更新
-- [ ] Undo栈深度限制
 
 ### 10. 边界情况
 - [ ] 循环引用处理
@@ -71,11 +72,11 @@
 **阶段1：核心框架（本周）**
 - 修复崩溃bug
 - 实现嵌套对象追踪
-- 重构undo/redo为路径记录
+- 重构undo/redo（命令模式）
 - 添加`_controller`支持
 
 **阶段2：数组支持（下周）**
-- 完善`ReactivableList.append`的自动通知
+- 完善`ReactivableList`的自动通知
 - 实现insert/delete事件
 - 测试数组新增触发更新流程
 
